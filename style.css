@@ -87,6 +87,32 @@ body {
     padding-inline: var(--space-xs);
 }
 
+.status-strip {
+    margin-top: var(--space-sm);
+    display: flex;
+    justify-content: center;
+}
+
+.status-strip__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 0.5rem;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    background: rgba(47, 125, 225, 0.1);
+    color: var(--brand);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
 /* Mobile-first: stacked tab labels */
 .mode-tabs {
     display: grid;

@@ -6,6 +6,10 @@
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![PokeAPI](https://img.shields.io/badge/Data-PokeAPI-2F7DE1?style=for-the-badge)](https://pokeapi.co/)
 [![Ages](https://img.shields.io/badge/Ages-5–7-2F7DE1?style=for-the-badge)](https://github.com/Elli2022/pokemon-kids-playground)
+[![Mobile first](https://img.shields.io/badge/Layout-Mobile%20first-2F7DE1?style=for-the-badge)](https://github.com/Elli2022/pokemon-kids-playground)
+[![Touch](https://img.shields.io/badge/Input-Touch%20friendly-2F7DE1?style=for-the-badge)](https://github.com/Elli2022/pokemon-kids-playground)
+[![Memory](https://img.shields.io/badge/Mode-Memory-2F7DE1?style=for-the-badge)](https://github.com/Elli2022/pokemon-kids-playground)
+[![Trail](https://img.shields.io/badge/Mode-Adventure%20trail-2F7DE1?style=for-the-badge)](https://github.com/Elli2022/pokemon-kids-playground)
 
 A **mobile-first**, touch-friendly Pokémon mini-game for children ages **5–7**. Sibling project to [pokemon-search-app](https://github.com/Elli2022/pokemon-search-app).
 
