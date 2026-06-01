@@ -13,11 +13,11 @@
 
 A **mobile-first**, touch-friendly Pokémon mini-game for children ages **5–7**. Sibling project to [pokemon-search-app](https://github.com/Elli2022/pokemon-search-app).
 
-Kids match picture cards only — no reading required. A curated roster (Pikachu, Charmander, Eevee, and friends) avoids random obscure species names.
+Kids match **picture cards only** — no reading required. A curated roster (Pikachu, Charmander, Eevee, and friends) avoids random obscure species names.
 
 ## Screenshot
 
-![Memory mode on a phone-sized layout — three-column card grid, mode tabs, and turn counter](images/screenshot.png)
+![Pokémon Kids Playground — mode tabs, blue highlight pills, and memory card grid on a phone layout](images/screenshot.png)
 
 ## Live demo
 
@@ -30,13 +30,19 @@ Kids match picture cards only — no reading required. A curated roster (Pikachu
 | **Memory** | 12 cards, 6 pairs. Flip two at a time until all matches are found. |
 | **Adventure trail** | Five stops on a path. Each stop has a 4-card mini memory (2 pairs). Clear a stop to move the buddy forward. |
 
+## In-app highlights
+
+Blue status pills in the header:
+
+`PokeAPI` · `Netlify` · `Ages 5–7` · `Touch-ready`
+
 ## Mobile & touch
 
 Built **mobile-first**, then enhanced for larger screens:
 
 - 3-column memory grid on phones, 4 columns from `36rem` up
 - Minimum **48×48px** tap targets (tabs, cards, buttons)
-- `touch-action: manipulation` and `-webkit-tap-highlight-color: transparent` to reduce tap delay and flash
+- `touch-action: manipulation` and reduced tap highlight flash
 - `pointerup` handlers with debounce to avoid double-flips on touch
 - `safe-area-inset` padding for notched devices
 - `100dvh` layout and horizontal scroll on the trail when needed
@@ -80,6 +86,10 @@ Open [http://localhost:4173](http://localhost:4173). Use your browser’s device
 2. **Build command:** leave empty.
 3. **Publish directory:** `.` (repository root).
 4. `netlify.toml` sets publish path and security headers.
+
+## Related project
+
+For older kids and adults, see **[pokemon-search-app](https://github.com/Elli2022/pokemon-search-app)** — full Pokédex search, favorites, evolution chains, and bilingual profiles.
 
 ## Author
 
