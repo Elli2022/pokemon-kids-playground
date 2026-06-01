@@ -30,12 +30,6 @@ Kids match **picture cards only** — no reading required. A curated roster (Pik
 | **Memory** | 12 cards, 6 pairs. Flip two at a time until all matches are found. |
 | **Adventure trail** | Five stops on a path. Each stop has a 4-card mini memory (2 pairs). Clear a stop to move the buddy forward. |
 
-## In-app highlights
-
-Blue status pills in the header:
-
-`PokeAPI` · `Netlify` · `Ages 5–7` · `Touch-ready`
-
 ## Mobile & touch
 
 Built **mobile-first**, then enhanced for larger screens:
