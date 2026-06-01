@@ -1,27 +1,84 @@
-# Pokémon Barnspel
+# Pokémon Kids Playground
 
-[![Netlify Status](https://img.shields.io/badge/Live-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://pokemon-barnspel.netlify.app/)
-[![Ålder](https://img.shields.io/badge/Ålder-5–7%20år-2F7DE1?style=for-the-badge)](https://github.com/Elli2022/pokemon-barnspel)
+[![Live Demo](https://img.shields.io/badge/Live-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://pokemon-barnspel.netlify.app/)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![PokeAPI](https://img.shields.io/badge/Data-PokeAPI-2F7DE1?style=for-the-badge)](https://pokeapi.co/)
+[![Ages](https://img.shields.io/badge/Ages-5–7-2F7DE1?style=for-the-badge)](https://github.com/Elli2022/pokemon-kids-playground)
 
-Ett enkelt spel för barn **5–7 år** — syskonprojekt till [pokemon-search-app](https://github.com/Elli2022/pokemon-search-app).
+A **mobile-first**, touch-friendly Pokémon mini-game for children ages **5–7**. Sibling project to [pokemon-search-app](https://github.com/Elli2022/pokemon-search-app).
 
-## Live
+Kids match picture cards only — no reading required. A curated roster (Pikachu, Charmander, Eevee, and friends) avoids random obscure species names.
 
-**https://pokemon-barnspel.netlify.app**
+## Screenshot
 
-## Spellägen
+![Memory mode on a phone-sized layout — three-column card grid, mode tabs, and turn counter](images/screenshot.png)
 
-| Läge | Så funkar det |
+## Live demo
+
+**[Play on Netlify](https://pokemon-barnspel.netlify.app/)**
+
+> Netlify subdomain: `pokemon-barnspel.netlify.app` (legacy name from the first deploy). The GitHub repo is `pokemon-kids-playground`.
+
+## Game modes
+
+| Mode | Description |
 | --- | --- |
-| **Memory** | 12 kort, 6 par — bara välkända Pokémon (Pikachu, Charmander, osv.) |
-| **Äventyrsbana** | 5 stopp på en bana; på varje stopp ett litet memory (2 par). Klarar du stoppet flyttar gubben framåt. |
+| **Memory** | 12 cards, 6 pairs. Flip two at a time until all matches are found. |
+| **Adventure trail** | Five stops on a path. Each stop has a 4-card mini memory (2 pairs). Clear a stop to move the buddy forward. |
 
-Inget gissningsspel med konstiga namn — korten visar bara bilder (⭐ på baksidan).
+## Mobile & touch
 
-## Teknik
+Built **mobile-first**, then enhanced for larger screens:
 
-Vanlig HTML, CSS, JavaScript och [PokeAPI](https://pokeapi.co/) för bilder och ljud.
+- 3-column memory grid on phones, 4 columns from `36rem` up
+- Minimum **48×48px** tap targets (tabs, cards, buttons)
+- `touch-action: manipulation` and `-webkit-tap-highlight-color: transparent` to reduce tap delay and flash
+- `pointerup` handlers with debounce to avoid double-flips on touch
+- `safe-area-inset` padding for notched devices
+- `100dvh` layout and horizontal scroll on the trail when needed
 
-## Författare
+## Tech stack
 
-Eleonora Nocentini Skoldebrink — [@Elli2022](https://github.com/Elli2022)
+| Layer | Choice |
+| --- | --- |
+| Markup | HTML5 |
+| Styles | CSS3 (custom properties, grid, mobile-first breakpoints) |
+| Logic | Vanilla JavaScript |
+| Data | [PokeAPI](https://pokeapi.co/) (artwork & cries) |
+| Hosting | [Netlify](https://www.netlify.com/) — static, no build step |
+
+## Project structure
+
+```text
+pokemon-kids-playground/
+├── images/
+│   └── screenshot.png
+├── index.html
+├── script.js
+├── style.css
+├── netlify.toml
+└── README.md
+```
+
+## Run locally
+
+```bash
+git clone https://github.com/Elli2022/pokemon-kids-playground.git
+cd pokemon-kids-playground
+python3 -m http.server 4173
+```
+
+Open [http://localhost:4173](http://localhost:4173). Use your browser’s device toolbar to test touch layouts.
+
+## Deploy on Netlify
+
+1. Import `Elli2022/pokemon-kids-playground` from GitHub.
+2. **Build command:** leave empty.
+3. **Publish directory:** `.` (repository root).
+4. `netlify.toml` sets publish path and security headers.
+
+## Author
+
+**Eleonora Nocentini Skoldebrink** — [@Elli2022](https://github.com/Elli2022)

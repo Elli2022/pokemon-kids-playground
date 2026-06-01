@@ -150,7 +150,7 @@ function createCardButton(card, sizeClass = "") {
     button.className = `memory-card ${sizeClass}`.trim();
     button.dataset.uid = card.uid;
     button.dataset.pokemonId = String(card.pokemonId);
-    button.setAttribute("aria-label", "Vänd kort");
+    button.setAttribute("aria-label", `Flip card, ${card.label}`);
 
     const inner = document.createElement("span");
     inner.className = "memory-card__inner";
@@ -277,7 +277,7 @@ async function startMemory() {
     );
 
     renderGrid(elements.memoryGrid, state.memory.cards);
-    elements.memoryFeedback.textContent = "Börja vänd två kort!";
+    elements.memoryFeedback.textContent = "Tap two cards to start!";
 }
 
 function onMemoryWin() {
@@ -288,16 +288,12 @@ function onMemoryWin() {
         return;
     }
 
-    elements.memoryFeedback.textContent = `Jippie! Alla par på ${state.memory.turns} försök! 🎉`;
+    elements.memoryFeedback.textContent = `You got all pairs in ${state.memory.turns} turns!`;
     elements.memoryRestart.hidden = false;
     burstConfetti();
 }
 
-elements.memoryGrid.addEventListener("click", (event) => {
-    const button = event.target.closest(".memory-card");
-    if (!button) {
-        return;
-    }
+bindCardGrid(elements.memoryGrid, (button) => {
     handleMemoryPick(
         elements.memoryGrid,
         state.memory,
@@ -357,16 +353,16 @@ function positionHero() {
 
 async function startTrailStop() {
     if (state.trail.stop >= TRAIL_STOPS) {
-        elements.trailStageLabel.textContent = "Mål!";
+        elements.trailStageLabel.textContent = "Finish!";
         elements.trailGrid.innerHTML = "";
-        elements.trailFeedback.textContent = "Du klarade hela banan! 🏆";
+        elements.trailFeedback.textContent = "You completed the whole trail!";
         elements.trailRestart.hidden = false;
         burstConfetti();
         return;
     }
 
     elements.trailFeedback.textContent = "";
-    elements.trailStageLabel.textContent = `Stopp ${state.trail.stop + 1} av ${TRAIL_STOPS} — hitta 2 par!`;
+    elements.trailStageLabel.textContent = `Stop ${state.trail.stop + 1} of ${TRAIL_STOPS} — find 2 pairs`;
 
     const offset = state.trail.stop * TRAIL_PAIRS_PER_STOP;
     const pool = FRIENDLY_POKEMON.slice(offset, offset + TRAIL_PAIRS_PER_STOP * 2);
@@ -393,7 +389,7 @@ function onTrailWin() {
         return;
     }
 
-    elements.trailFeedback.textContent = "Bra! Nästa stopp…";
+    elements.trailFeedback.textContent = "Nice! Next stop…";
     state.trail.stop += 1;
 
     window.setTimeout(() => {
@@ -409,11 +405,7 @@ async function startTrail() {
     await startTrailStop();
 }
 
-elements.trailGrid.addEventListener("click", (event) => {
-    const button = event.target.closest(".memory-card");
-    if (!button) {
-        return;
-    }
+bindCardGrid(elements.trailGrid, (button) => {
     handleMemoryPick(
         elements.trailGrid,
         state.trail,
@@ -442,8 +434,8 @@ function setMode(mode) {
     });
 
     elements.modeHint.textContent = isMemory
-        ? "Memory: vänd två kort och hitta samma Pokémon."
-        : "Äventyrsbana: klarar du memory på varje stopp?";
+        ? "Memory: flip two cards and find matching Pokémon."
+        : "Adventure trail: clear mini memory at each stop.";
 
     if (isMemory) {
         void startMemory();
@@ -459,7 +451,38 @@ elements.modeTabs.forEach((tab) => {
 elements.soundButton.addEventListener("click", () => {
     state.soundOn = !state.soundOn;
     elements.soundButton.setAttribute("aria-pressed", String(state.soundOn));
-    elements.soundButton.textContent = state.soundOn ? "🔊 Ljud på" : "🔇 Ljud av";
+    elements.soundButton.textContent = state.soundOn ? "Sound on" : "Sound off";
 });
+
+/** Reliable taps on phones — pointerup avoids double-firing with click. */
+function bindCardGrid(gridEl, onPick) {
+    let lastUid = "";
+    let lastAt = 0;
+
+    gridEl.addEventListener(
+        "pointerup",
+        (event) => {
+            if (event.pointerType === "mouse" && event.button !== 0) {
+                return;
+            }
+
+            const button = event.target.closest(".memory-card");
+            if (!button || !gridEl.contains(button)) {
+                return;
+            }
+
+            const now = Date.now();
+            const uid = button.dataset.uid;
+            if (uid === lastUid && now - lastAt < 400) {
+                return;
+            }
+
+            lastUid = uid;
+            lastAt = now;
+            onPick(button);
+        },
+        { passive: true }
+    );
+}
 
 void startMemory();
