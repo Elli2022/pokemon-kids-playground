@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta
         name="description"
-        content="Ett enkelt Pokémon-spel för barn 5–7 år. Tryck på rätt bild — inget läsande krävs."
+        content="Pokémon memory och äventyrsbana för barn 5–7 år. Para ihop bilder — inga konstiga namn att läsa."
     >
     <title>Pokémon Barnspel</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,57 +23,61 @@
     <div class="app">
         <header class="top">
             <p class="top__eyebrow">För barn 5–7 år</p>
-            <h1 class="top__title">Hitta rätt Pokémon!</h1>
-            <p class="top__hint">Titta på bilden uppe. Tryck på samma Pokémon nedan.</p>
+            <h1 class="top__title">Pokémon Barnspel</h1>
+            <p class="top__hint" id="modeHint">Välj hur du vill leka.</p>
         </header>
 
-        <section class="scoreboard" aria-label="Poäng">
-            <div class="stars" id="stars" aria-live="polite">
-                <span class="star" data-star="1">★</span>
-                <span class="star" data-star="2">★</span>
-                <span class="star" data-star="3">★</span>
-                <span class="star" data-star="4">★</span>
-                <span class="star" data-star="5">★</span>
+        <nav class="mode-tabs" aria-label="Spelläge">
+            <button type="button" class="mode-tab is-active" data-mode="memory" aria-pressed="true">
+                🃏 Memory
+            </button>
+            <button type="button" class="mode-tab" data-mode="trail" aria-pressed="false">
+                🛤️ Äventyrsbana
+            </button>
+        </nav>
+
+        <!-- Memory -->
+        <section id="memoryPanel" class="panel">
+            <p class="panel__intro">Vänd två kort. Hittar du samma Pokémon vinner du paret!</p>
+            <div class="hud">
+                <span class="hud__item">🔄 <span id="memoryTurns">0</span> försök</span>
+                <span class="hud__item">⭐ <span id="memoryPairs">0</span> / <span id="memoryTotal">6</span> par</span>
             </div>
-            <p class="round-label" id="roundLabel">Runda 1 av 5</p>
+            <div class="memory-grid" id="memoryGrid" aria-label="Memory-bräde"></div>
+            <p class="feedback" id="memoryFeedback" role="status" aria-live="polite"></p>
+            <button type="button" class="btn btn--secondary" id="memoryRestart" hidden>
+                Spela memory igen
+            </button>
         </section>
 
-        <section class="question card" aria-live="polite">
-            <p class="question__prompt" id="promptText">Vem är det?</p>
-            <div class="question__image-wrap">
-                <img
-                    id="questionImage"
-                    class="question__image"
-                    src=""
-                    alt=""
-                    width="220"
-                    height="220"
-                >
+        <!-- Adventure trail -->
+        <section id="trailPanel" class="panel" hidden>
+            <p class="panel__intro">
+                Hjälp din vän längs banan! Klarar du memory på varje stopp flyttar gubben framåt.
+            </p>
+            <div class="trail" id="trail" aria-label="Äventyrsbana"></div>
+            <div class="trail-stage card" id="trailStage">
+                <p class="trail-stage__label" id="trailStageLabel">Stopp 1 av 5</p>
+                <div class="memory-grid memory-grid--small" id="trailGrid" aria-label="Memory på stoppet"></div>
             </div>
-            <p class="question__name" id="questionName" hidden></p>
+            <p class="feedback" id="trailFeedback" role="status" aria-live="polite"></p>
+            <button type="button" class="btn btn--secondary" id="trailRestart" hidden>
+                Börja om banan
+            </button>
         </section>
-
-        <section class="choices" id="choices" aria-label="Välj Pokémon">
-            <!-- Fylls i av JavaScript -->
-        </section>
-
-        <p class="feedback" id="feedback" role="status" aria-live="assertive"></p>
 
         <div class="actions">
-            <button type="button" class="btn btn--primary" id="nextButton" hidden>
-                Nästa runda →
-            </button>
-            <button type="button" class="btn btn--secondary" id="playAgainButton" hidden>
-                Spela igen
-            </button>
             <button type="button" class="btn btn--ghost" id="soundButton" aria-pressed="true">
                 🔊 Ljud på
             </button>
         </div>
 
         <footer class="footer">
-            <p>Data från <a href="https://pokeapi.co/" rel="noopener noreferrer">PokeAPI</a></p>
-            <p class="footer__note">Syskonprojekt till <a href="https://github.com/Elli2022/pokemon-search-app">pokemon-search-app</a></p>
+            <p>Bara kända Pokémon — inga konstiga namn i spelet.</p>
+            <p class="footer__note">
+                Data från <a href="https://pokeapi.co/" rel="noopener noreferrer">PokeAPI</a> ·
+                <a href="https://github.com/Elli2022/pokemon-search-app">pokemon-search-app</a>
+            </p>
         </footer>
     </div>
 

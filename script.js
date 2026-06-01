@@ -1,224 +1,460 @@
 const API_BASE = "https://pokeapi.co/api/v2";
-const ROUNDS = 5;
-const CHOICE_COUNT = 3;
-/** Gen 1 — välbekanta Pokémon för små barn */
-const POKEMON_POOL = Array.from({ length: 151 }, (_, index) => index + 1);
 const ARTWORK_URL =
     "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork";
 
+/** Bara välkända Gen 1 — inga udda namn som förvirrar barn (eller föräldrar). */
+const FRIENDLY_POKEMON = [
+    { id: 25, label: "Pikachu" },
+    { id: 1, label: "Bulbasaur" },
+    { id: 4, label: "Charmander" },
+    { id: 7, label: "Squirtle" },
+    { id: 39, label: "Jigglypuff" },
+    { id: 54, label: "Psyduck" },
+    { id: 52, label: "Meowth" },
+    { id: 35, label: "Clefairy" },
+    { id: 133, label: "Eevee" },
+    { id: 143, label: "Snorlax" }
+];
+
+const MEMORY_PAIR_COUNT = 6;
+const TRAIL_STOPS = 5;
+const TRAIL_PAIRS_PER_STOP = 2;
+
+const pokemonCache = new Map();
+
 const elements = {
-    questionImage: document.getElementById("questionImage"),
-    questionName: document.getElementById("questionName"),
-    promptText: document.getElementById("promptText"),
-    choices: document.getElementById("choices"),
-    feedback: document.getElementById("feedback"),
-    roundLabel: document.getElementById("roundLabel"),
-    stars: document.getElementById("stars"),
-    nextButton: document.getElementById("nextButton"),
-    playAgainButton: document.getElementById("playAgainButton"),
+    modeHint: document.getElementById("modeHint"),
+    modeTabs: document.querySelectorAll(".mode-tab"),
+    memoryPanel: document.getElementById("memoryPanel"),
+    trailPanel: document.getElementById("trailPanel"),
+    memoryGrid: document.getElementById("memoryGrid"),
+    memoryTurns: document.getElementById("memoryTurns"),
+    memoryPairs: document.getElementById("memoryPairs"),
+    memoryTotal: document.getElementById("memoryTotal"),
+    memoryFeedback: document.getElementById("memoryFeedback"),
+    memoryRestart: document.getElementById("memoryRestart"),
+    trail: document.getElementById("trail"),
+    trailGrid: document.getElementById("trailGrid"),
+    trailStageLabel: document.getElementById("trailStageLabel"),
+    trailFeedback: document.getElementById("trailFeedback"),
+    trailRestart: document.getElementById("trailRestart"),
     soundButton: document.getElementById("soundButton"),
     confetti: document.getElementById("confetti")
 };
 
 const state = {
-    round: 1,
-    score: 0,
+    mode: "memory",
     soundOn: true,
-    answered: false,
-    current: null,
-    choices: [],
-    cryAudio: null
+    memory: {
+        cards: [],
+        first: null,
+        second: null,
+        lock: false,
+        turns: 0,
+        matched: 0
+    },
+    trail: {
+        stop: 0,
+        cards: [],
+        first: null,
+        second: null,
+        lock: false
+    }
 };
-
-const messages = {
-    correct: ["Bra jobbat!", "Rätt!", "Jippie!", "Superbra!"],
-    wrong: ["Nästan!", "Prova igen nästa gång!", "Oj, fel — men du klarar nästa!"],
-    done: "Du klarade spelet! Vill du spela igen?"
-};
-
-function pickRandom(items) {
-    return items[Math.floor(Math.random() * items.length)];
-}
 
 function shuffle(items) {
     const copy = [...items];
-
-    for (let index = copy.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(Math.random() * (index + 1));
-        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-
     return copy;
-}
-
-function capitalizeName(name) {
-    return name
-        .split("-")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
 }
 
 function artworkFor(id) {
     return `${ARTWORK_URL}/${id}.png`;
 }
 
-async function fetchPokemon(id) {
-    const response = await fetch(`${API_BASE}/pokemon/${id}`);
-
-    if (!response.ok) {
-        throw new Error(`Kunde inte hämta Pokémon #${id}`);
+async function fetchPokemonMeta(id) {
+    if (pokemonCache.has(id)) {
+        return pokemonCache.get(id);
     }
 
-    return response.json();
-}
+    const response = await fetch(`${API_BASE}/pokemon/${id}`);
+    if (!response.ok) {
+        throw new Error(`API ${id}`);
+    }
 
-function buildRoundIds() {
-    return shuffle(POKEMON_POOL).slice(0, CHOICE_COUNT);
-}
-
-async function loadRound() {
-    state.answered = false;
-    elements.feedback.textContent = "";
-    elements.feedback.className = "feedback";
-    elements.nextButton.hidden = true;
-    elements.playAgainButton.hidden = true;
-    elements.choices.innerHTML = "";
-    elements.roundLabel.textContent = `Runda ${state.round} av ${ROUNDS}`;
-    elements.promptText.textContent = "Vem är det?";
-    elements.questionName.hidden = true;
-    elements.questionImage.alt = "Gissningsbild";
-    elements.questionImage.src = "";
-    elements.questionImage.classList.add("is-loading");
-
-    const ids = buildRoundIds();
-    const pokemonList = await Promise.all(ids.map((id) => fetchPokemon(id)));
-
-    state.current = pickRandom(pokemonList);
-    state.choices = shuffle(pokemonList);
-
-    elements.questionImage.src = artworkFor(state.current.id);
-    elements.questionImage.alt = `En Pokémon — gissa vilken`;
-    elements.questionImage.classList.remove("is-loading");
-
-    state.choices.forEach((pokemon) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "choice";
-        button.dataset.id = String(pokemon.id);
-        button.setAttribute("aria-label", `Välj ${capitalizeName(pokemon.name)}`);
-
-        const image = document.createElement("img");
-        image.src = artworkFor(pokemon.id);
-        image.alt = "";
-        image.width = 96;
-        image.height = 96;
-
-        const label = document.createElement("span");
-        label.className = "choice__label";
-        label.textContent = capitalizeName(pokemon.name);
-
-        button.append(image, label);
-        button.addEventListener("click", () => handleChoice(pokemon.id, button));
-        elements.choices.appendChild(button);
-    });
-}
-
-function updateStars() {
-    elements.stars.querySelectorAll(".star").forEach((star) => {
-        const earned = Number(star.dataset.star) <= state.score;
-        star.classList.toggle("is-earned", earned);
-    });
+    const data = await response.json();
+    const meta = {
+        id,
+        cry: data.cries?.latest || null
+    };
+    pokemonCache.set(id, meta);
+    return meta;
 }
 
 function burstConfetti() {
     const colors = ["#ffc107", "#2f7de1", "#3cb371", "#ff8a65", "#ab47bc"];
-
-    for (let index = 0; index < 24; index += 1) {
+    for (let i = 0; i < 20; i += 1) {
         const piece = document.createElement("span");
         piece.style.left = `${Math.random() * 100}%`;
-        piece.style.background = colors[index % colors.length];
-        piece.style.animationDelay = `${Math.random() * 0.35}s`;
+        piece.style.background = colors[i % colors.length];
+        piece.style.animationDelay = `${Math.random() * 0.3}s`;
         elements.confetti.appendChild(piece);
-        window.setTimeout(() => piece.remove(), 1600);
+        window.setTimeout(() => piece.remove(), 1500);
     }
 }
 
-function playCry() {
-    if (!state.soundOn || !state.current?.cries?.latest) {
+function playCry(pokemonId) {
+    if (!state.soundOn) {
+        return;
+    }
+
+    const meta = pokemonCache.get(pokemonId);
+    if (!meta?.cry) {
         return;
     }
 
     try {
-        state.cryAudio = new Audio(state.current.cries.latest);
-        state.cryAudio.volume = 0.45;
-        void state.cryAudio.play();
+        const audio = new Audio(meta.cry);
+        audio.volume = 0.4;
+        void audio.play();
     } catch {
-        /* Ljud är valfritt */
+        /* optional */
     }
 }
 
-function revealChoices(correctId) {
-    elements.choices.querySelectorAll(".choice").forEach((button) => {
-        button.disabled = true;
-        const id = Number(button.dataset.id);
+function buildDeck(pairCount, pool = FRIENDLY_POKEMON) {
+    const picked = shuffle(pool).slice(0, pairCount);
+    const cards = [];
 
-        if (id === correctId) {
-            button.classList.add("is-correct");
-        } else if (button.classList.contains("was-picked")) {
-            button.classList.add("is-wrong");
+    picked.forEach((poke, index) => {
+        for (let copy = 0; copy < 2; copy += 1) {
+            cards.push({
+                uid: `${poke.id}-${copy}-${index}`,
+                pokemonId: poke.id,
+                label: poke.label,
+                image: artworkFor(poke.id),
+                matched: false
+            });
         }
     });
 
-    elements.questionName.hidden = false;
-    elements.questionName.textContent = capitalizeName(state.current.name);
+    return shuffle(cards);
 }
 
-function handleChoice(pickedId, button) {
-    if (state.answered) {
+function createCardButton(card, sizeClass = "") {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `memory-card ${sizeClass}`.trim();
+    button.dataset.uid = card.uid;
+    button.dataset.pokemonId = String(card.pokemonId);
+    button.setAttribute("aria-label", "Vänd kort");
+
+    const inner = document.createElement("span");
+    inner.className = "memory-card__inner";
+
+    const back = document.createElement("span");
+    back.className = "memory-card__face memory-card__face--back";
+    back.textContent = "⭐";
+
+    const front = document.createElement("span");
+    front.className = "memory-card__face memory-card__face--front";
+    const img = document.createElement("img");
+    img.src = card.image;
+    img.alt = card.label;
+    img.width = 96;
+    img.height = 96;
+    front.appendChild(img);
+
+    inner.append(back, front);
+    button.appendChild(inner);
+
+    return button;
+}
+
+function renderGrid(gridEl, cards, sizeClass = "") {
+    gridEl.innerHTML = "";
+    cards.forEach((card) => {
+        gridEl.appendChild(createCardButton(card, sizeClass));
+    });
+}
+
+function flipCardButton(button, open) {
+    button.classList.toggle("is-flipped", open);
+    button.disabled = open;
+}
+
+function getCardFromGrid(gridEl, uid) {
+    return gridEl.querySelector(`[data-uid="${uid}"]`);
+}
+
+function handleMemoryPick(gridEl, gameState, cards, uid, onWin) {
+    if (gameState.lock) {
         return;
     }
 
-    state.answered = true;
-    button.classList.add("was-picked");
+    const card = cards.find((c) => c.uid === uid);
+    if (!card || card.matched) {
+        return;
+    }
 
-    const isCorrect = pickedId === state.current.id;
+    const button = getCardFromGrid(gridEl, uid);
+    if (!button || button.classList.contains("is-flipped")) {
+        return;
+    }
 
-    if (isCorrect) {
-        state.score += 1;
-        updateStars();
-        elements.feedback.textContent = pickRandom(messages.correct);
-        elements.feedback.className = "feedback is-good";
+    flipCardButton(button, true);
+
+    if (!gameState.first) {
+        gameState.first = { uid, pokemonId: card.pokemonId };
+        return;
+    }
+
+    gameState.second = { uid, pokemonId: card.pokemonId };
+    gameState.lock = true;
+
+    if (gameState === state.memory) {
+        state.memory.turns += 1;
+        elements.memoryTurns.textContent = String(state.memory.turns);
+    }
+
+    const isMatch = gameState.first.pokemonId === gameState.second.pokemonId;
+
+    if (isMatch) {
+        cards
+            .filter((c) => c.pokemonId === card.pokemonId)
+            .forEach((c) => {
+                c.matched = true;
+            });
+
+        playCry(card.pokemonId);
         burstConfetti();
-        playCry();
-    } else {
-        elements.feedback.textContent = pickRandom(messages.wrong);
-        elements.feedback.className = "feedback is-oops";
-    }
 
-    revealChoices(state.current.id);
-
-    if (state.round >= ROUNDS) {
-        elements.feedback.textContent = `${messages.done} Du fick ${state.score} av ${ROUNDS} stjärnor.`;
-        elements.playAgainButton.hidden = false;
+        window.setTimeout(() => {
+            gameState.first = null;
+            gameState.second = null;
+            gameState.lock = false;
+            onWin();
+        }, 500);
         return;
     }
 
-    elements.nextButton.hidden = false;
+    window.setTimeout(() => {
+        [gameState.first.uid, gameState.second.uid].forEach((id) => {
+            const btn = getCardFromGrid(gridEl, id);
+            if (btn) {
+                flipCardButton(btn, false);
+                btn.disabled = false;
+            }
+        });
+        gameState.first = null;
+        gameState.second = null;
+        gameState.lock = false;
+    }, 750);
 }
 
-function resetGame() {
-    state.round = 1;
-    state.score = 0;
-    updateStars();
-    void loadRound();
+/* —— Memory mode —— */
+async function startMemory() {
+    elements.memoryTotal.textContent = String(MEMORY_PAIR_COUNT);
+    elements.memoryPairs.textContent = "0";
+    elements.memoryTurns.textContent = "0";
+    elements.memoryFeedback.textContent = "";
+    elements.memoryRestart.hidden = true;
+
+    state.memory = {
+        cards: buildDeck(MEMORY_PAIR_COUNT),
+        first: null,
+        second: null,
+        lock: false,
+        turns: 0,
+        matched: 0
+    };
+
+    await Promise.all(
+        [...new Set(state.memory.cards.map((c) => c.pokemonId))].map((id) => fetchPokemonMeta(id))
+    );
+
+    renderGrid(elements.memoryGrid, state.memory.cards);
+    elements.memoryFeedback.textContent = "Börja vänd två kort!";
 }
 
-elements.nextButton.addEventListener("click", () => {
-    state.round += 1;
-    void loadRound();
+function onMemoryWin() {
+    state.memory.matched += 1;
+    elements.memoryPairs.textContent = String(state.memory.matched);
+
+    if (state.memory.matched < MEMORY_PAIR_COUNT) {
+        return;
+    }
+
+    elements.memoryFeedback.textContent = `Jippie! Alla par på ${state.memory.turns} försök! 🎉`;
+    elements.memoryRestart.hidden = false;
+    burstConfetti();
+}
+
+elements.memoryGrid.addEventListener("click", (event) => {
+    const button = event.target.closest(".memory-card");
+    if (!button) {
+        return;
+    }
+    handleMemoryPick(
+        elements.memoryGrid,
+        state.memory,
+        state.memory.cards,
+        button.dataset.uid,
+        onMemoryWin
+    );
 });
 
-elements.playAgainButton.addEventListener("click", resetGame);
+elements.memoryRestart.addEventListener("click", () => void startMemory());
+
+/* —— Trail mode —— */
+function renderTrailPath() {
+    elements.trail.innerHTML = "";
+    const hero = document.createElement("div");
+    hero.className = "trail__hero";
+    hero.id = "trailHero";
+    hero.setAttribute("aria-hidden", "true");
+    hero.textContent = "🐾";
+
+    const steps = document.createElement("div");
+    steps.className = "trail__steps";
+
+    for (let i = 0; i < TRAIL_STOPS; i += 1) {
+        const step = document.createElement("div");
+        step.className = "trail__step";
+        step.dataset.step = String(i);
+        if (i < state.trail.stop) {
+            step.classList.add("is-done");
+        }
+        if (i === state.trail.stop && state.trail.stop < TRAIL_STOPS) {
+            step.classList.add("is-current");
+        }
+        step.textContent = String(i + 1);
+        steps.appendChild(step);
+    }
+
+    elements.trail.append(hero, steps);
+    positionHero();
+}
+
+function positionHero() {
+    const hero = document.getElementById("trailHero");
+    const current = elements.trail.querySelector(".trail__step.is-current");
+    if (!hero || !current) {
+        if (hero && state.trail.stop >= TRAIL_STOPS) {
+            hero.style.left = "92%";
+        }
+        return;
+    }
+
+    const trailRect = elements.trail.getBoundingClientRect();
+    const stepRect = current.getBoundingClientRect();
+    const left = stepRect.left - trailRect.left + stepRect.width / 2 - 16;
+    hero.style.left = `${left}px`;
+}
+
+async function startTrailStop() {
+    if (state.trail.stop >= TRAIL_STOPS) {
+        elements.trailStageLabel.textContent = "Mål!";
+        elements.trailGrid.innerHTML = "";
+        elements.trailFeedback.textContent = "Du klarade hela banan! 🏆";
+        elements.trailRestart.hidden = false;
+        burstConfetti();
+        return;
+    }
+
+    elements.trailFeedback.textContent = "";
+    elements.trailStageLabel.textContent = `Stopp ${state.trail.stop + 1} av ${TRAIL_STOPS} — hitta 2 par!`;
+
+    const offset = state.trail.stop * TRAIL_PAIRS_PER_STOP;
+    const pool = FRIENDLY_POKEMON.slice(offset, offset + TRAIL_PAIRS_PER_STOP * 2);
+    const safePool = pool.length >= TRAIL_PAIRS_PER_STOP ? pool : FRIENDLY_POKEMON;
+
+    state.trail.cards = buildDeck(TRAIL_PAIRS_PER_STOP, safePool);
+    state.trail.first = null;
+    state.trail.second = null;
+    state.trail.lock = false;
+    state.trail.matched = 0;
+
+    await Promise.all(
+        [...new Set(state.trail.cards.map((c) => c.pokemonId))].map((id) => fetchPokemonMeta(id))
+    );
+
+    renderGrid(elements.trailGrid, state.trail.cards, "memory-card--small");
+    renderTrailPath();
+}
+
+function onTrailWin() {
+    state.trail.matched = (state.trail.matched || 0) + 1;
+
+    if (state.trail.matched < TRAIL_PAIRS_PER_STOP) {
+        return;
+    }
+
+    elements.trailFeedback.textContent = "Bra! Nästa stopp…";
+    state.trail.stop += 1;
+
+    window.setTimeout(() => {
+        void startTrailStop();
+    }, 900);
+}
+
+async function startTrail() {
+    state.trail.stop = 0;
+    state.trail.matched = 0;
+    elements.trailRestart.hidden = true;
+    elements.trailFeedback.textContent = "";
+    await startTrailStop();
+}
+
+elements.trailGrid.addEventListener("click", (event) => {
+    const button = event.target.closest(".memory-card");
+    if (!button) {
+        return;
+    }
+    handleMemoryPick(
+        elements.trailGrid,
+        state.trail,
+        state.trail.cards,
+        button.dataset.uid,
+        onTrailWin
+    );
+});
+
+elements.trailRestart.addEventListener("click", () => void startTrail());
+
+window.addEventListener("resize", positionHero);
+
+/* —— Mode switch —— */
+function setMode(mode) {
+    state.mode = mode;
+    const isMemory = mode === "memory";
+
+    elements.memoryPanel.hidden = !isMemory;
+    elements.trailPanel.hidden = isMemory;
+
+    elements.modeTabs.forEach((tab) => {
+        const active = tab.dataset.mode === mode;
+        tab.classList.toggle("is-active", active);
+        tab.setAttribute("aria-pressed", String(active));
+    });
+
+    elements.modeHint.textContent = isMemory
+        ? "Memory: vänd två kort och hitta samma Pokémon."
+        : "Äventyrsbana: klarar du memory på varje stopp?";
+
+    if (isMemory) {
+        void startMemory();
+    } else {
+        void startTrail();
+    }
+}
+
+elements.modeTabs.forEach((tab) => {
+    tab.addEventListener("click", () => setMode(tab.dataset.mode));
+});
 
 elements.soundButton.addEventListener("click", () => {
     state.soundOn = !state.soundOn;
@@ -226,4 +462,4 @@ elements.soundButton.addEventListener("click", () => {
     elements.soundButton.textContent = state.soundOn ? "🔊 Ljud på" : "🔇 Ljud av";
 });
 
-void loadRound();
+void startMemory();
